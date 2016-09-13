@@ -209,11 +209,11 @@ foreach ($push as $k => $elem) {
 	
 	$title = $desc . ' ' . $value . ' Euro';
 	$message = '<b>'.$date . '</b><br>' . $subject . '<br><br><b style="color:'.$color.'">' . $value . ' Euro</b>'; 
-
+	$utf8message = mb_convert_encoding($message, "UTF-8");
 	// play sound only on first push
 	$sound = $k == 0 ? 'cash' : 'no-sound';
 	
-	$cmd = 'curl --silent -d "user_credentials='.$boxcar_token.'&notification[title]='.urlencode($title).'&notification[long_message]='.urlencode($message).'&notification[sound]='.$sound.'" https://new.boxcar.io/api/notifications';
+	$cmd = 'curl --silent -d "user_credentials='.$boxcar_token.'&notification[title]='.urlencode($title).'&notification[long_message]='.urlencode($utf8message).'&notification[sound]='.$sound.'" https://new.boxcar.io/api/notifications';
 	//echo $cmd;
 	echo exec($cmd);
 	echo "\n";
