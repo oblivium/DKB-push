@@ -209,7 +209,7 @@ foreach ($push as $k => $elem) {
 	
 	$title = $desc . ' ' . $value . ' Euro';
 	$message = '<b>'.$date . '</b><br>' . $subject . '<br><br><b style="color:'.$color.'">' . $value . ' Euro</b>'; 
-	$utf8message = mb_convert_encoding($message, "UTF-8");
+	$utf8message = utf8_encode($message);
 	// play sound only on first push
 	$sound = $k == 0 ? 'cash' : 'no-sound';
 	
