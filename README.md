@@ -3,7 +3,7 @@ DKB-push
 
 Scrapes the DKB online banking and sends a PUSH message for every new transaction
 
-This PHP script scrapes the online banking website of the DKB (Deutsche Kreditbank Berlin). After login, the transactions of all accounts are downloaded as CSV files and compared with previously downloaded CSVs. If threre's a new entry, a PUSH message is sent via Boxcar App to any iOS device.
+This PHP script scrapes the online banking website of the DKB (Deutsche Kreditbank Berlin). After login, the transactions of all accounts are downloaded as CSV files and compared with previously downloaded CSVs. If threre's a new entry, a PUSH message is sent via Boxcar and/or Pushover App to any iOS device.
 
 [Simple HTML DOM](http://simplehtmldom.sourceforge.net/) is used for HTML scraping.
 
