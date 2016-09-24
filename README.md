@@ -7,7 +7,7 @@ This PHP script scrapes the online banking website of the DKB (Deutsche Kreditba
 
 [Simple HTML DOM](http://simplehtmldom.sourceforge.net/) is used for HTML scraping.
 
-To receive the PUSH messages, you need to download the Boxcar 2 app on the iOS Appstore (free). This script sends a maximum of 5 push messages per account and pauses every 3 messages. No push messages are send on the first run. All downloaded CSVs are stored in the data directory for later comparison.
+To receive the PUSH messages, you need to download the Boxcar 2 or Pushover app on the iOS Appstore (free). This script sends a maximum of 5 push messages per account and pauses every 3 messages. No push messages are send on the first run. All downloaded CSVs are stored in the data directory for later comparison.
 
 Configuration
 -------------
