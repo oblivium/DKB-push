@@ -11,7 +11,7 @@ To receive the PUSH messages, you need to download the Boxcar 2 app on the iOS A
 
 Configuration
 -------------
-Rename config.php-example to config.php and enter the login credentials for the DKB online banking. You also have to enter the boxcar access token. The token is displayed in the Boxcar 2 iOS app under settings.
+Rename config.php-example to config.php and enter the login credentials for the DKB online banking. You also have to enter Boxcar and/or Pushover access tokens and settings. For more info on the Pushover class please refer to https://github.com/cschalenborgh/php-pushover 
 
 Usage
 -----
@@ -20,4 +20,4 @@ This script is best run from cron in your local network, ie on a homeserver or R
 ### Example cron entry
 This runs the script every two hours during bank business hours:
 
-0 8,10,12,14,16,18 * * 1-6 /path/to/dkb-crawl.php 
+0 8,10,12,14,16,18 * * 1-6 /path/to/dkb-crawl-boxcar.php 
