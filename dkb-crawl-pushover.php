@@ -201,10 +201,10 @@ foreach ($accounts as $account) {
 //
 echo "PUSH via Pushover\n";
 foreach ($push as $k => $elem) {
-/*	if ($k && $k%3 == 0) {
+	if ($k && $k%3 == 0) {
 		echo "Sleeping..\n";
 		sleep(10);
-	} */
+	}
 	list($desc, $date, $subject, $value) = $elem;
 	$color = $value[0] == '-' ? 'red' : 'green';
 
