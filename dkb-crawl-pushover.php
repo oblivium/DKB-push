@@ -4,6 +4,7 @@
 chdir(__DIR__);
 require('simple_html_dom.php');
 require('config.php');
+require_once('Pushover.php');
 
 $url = 'https://www.dkb.de/';
 define('CSV_HEADER_LINES', 7);
@@ -18,7 +19,7 @@ define('CSV_CC_COLUMN_VALUE', 4);
 
 function doCurlPost($action, $data) {
 	global $url, $ch;
-	
+
 	$lastUri = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
 	if ($lastUri) { curl_setopt($ch, CURLOPT_REFERER, $lastUri); }
 
@@ -26,19 +27,19 @@ function doCurlPost($action, $data) {
 	curl_setopt($ch, CURLOPT_POST, count($data));
 	curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
 	curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-	
+
 	return curl_exec($ch);
 }
 
 function doCurlGet($path) {
 	global $url, $ch;
-	
+
 	$lastUri = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
 	if ($lastUri) { curl_setopt($ch, CURLOPT_REFERER, $lastUri); }
 
 	curl_setopt($ch, CURLOPT_URL, $path);
 	curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-	
+
 	return curl_exec($ch);
 }
 
@@ -74,11 +75,11 @@ $dom = str_get_html($result);
 $form = $dom->find('form', 1);
 
 $post_data = array();
-foreach ($form->find('input') as $elem) {	
+foreach ($form->find('input') as $elem) {
 	if ($elem->name == 'j_username') $elem->value = $kto;
 	if ($elem->name == 'j_password') $elem->value = $pin;
-	
-	$post_data[$elem->name] = $elem->value;	
+
+	$post_data[$elem->name] = $elem->value;
 }
 $html_ = doCurlPost('banking', $post_data);
 
@@ -100,7 +101,7 @@ $dom_ = str_get_html($html_);
 $cnt = 0;
 foreach ($dom_->find('table[class=financialStatusTable] tr') as $k => $row) {
 	if ($row->class != 'mainRow') { continue; }
-	
+
 	// loop
 	$td = $row->find('td', 0);
 	if (!$td) continue;
@@ -111,7 +112,7 @@ foreach ($dom_->find('table[class=financialStatusTable] tr') as $k => $row) {
 	$ec = strpos($td->find('div', 1)->class, 'iban') !== false;
 
 	if ($desc == 'Depot') break;
-	
+
 	echo "  found '$desc' ($nr)";
 	echo $ec ? " - is EC" :  " - is CC";
 	echo " - load Details";
@@ -121,12 +122,12 @@ foreach ($dom_->find('table[class=financialStatusTable] tr') as $k => $row) {
 	echo " - download CSV";
 	$ums = $ec ? 'kontoumsaetze' : 'kreditkartenumsaetze';
 	$csv = doCurlGet($url . 'banking/finanzstatus/'.$ums.'?$event=csvExport');
-	
-	$row->clear(); 
+
+	$row->clear();
 	unset($row);
 
 	$cnt++;
-	
+
 	echo "\n";
 	$accounts[$nr] = ['desc' => $desc, 'csv' => $csv, 'nr' => $nr, 'type' => $ec?'ec':'cc'];
 }
@@ -167,22 +168,22 @@ foreach ($accounts as $account) {
 			// push
 			if (++$cnt >= 5) break; // no more than 5 push messages per account per run
 			echo $str = "    new entry: $line\n";
-		
+
 			if ($account['type'] == 'ec') {
 				// Strip CC data out of Verwendungszweck
 				$data[CSV_EC_COLUMN_SUBJECT2] = preg_replace('#(\d{4}) \d{4} \d{4} (\d{4})#', '$1 XXXX XXXX $2', $data[CSV_EC_COLUMN_SUBJECT2]);
 
 				$push[] = array(
-					$account['desc'], 
-					$data[CSV_EC_COLUMN_DATE], 
+					$account['desc'],
+					$data[CSV_EC_COLUMN_DATE],
 					$data[CSV_EC_COLUMN_SUBJECT1] . ' ' . $data[CSV_EC_COLUMN_SUBJECT2],
 					$data[CSV_EC_COLUMN_VALUE]
 				);
 			} else {
 				$push[] = array(
-					$account['desc'], 
-					$data[CSV_CC_COLUMN_DATE], 
-					$data[CSV_CC_COLUMN_SUBJECT], 
+					$account['desc'],
+					$data[CSV_CC_COLUMN_DATE],
+					$data[CSV_CC_COLUMN_SUBJECT],
 					$data[CSV_CC_COLUMN_VALUE]
 				);
 			}
@@ -198,26 +199,41 @@ foreach ($accounts as $account) {
 //
 // Push
 //
-echo "PUSH via Boxcar\n";
-foreach ($push as $k => $elem) {	
-	if ($k && $k%3 == 0) {
+echo "PUSH via Pushover\n";
+foreach ($push as $k => $elem) {
+/*	if ($k && $k%3 == 0) {
 		echo "Sleeping..\n";
 		sleep(10);
-	}
+	} */
 	list($desc, $date, $subject, $value) = $elem;
 	$color = $value[0] == '-' ? 'red' : 'green';
-	
-	$title = $desc . ' ' . $value . ' Euro';
-	$message = '<b>'.$date . '</b><br>' . $subject . '<br><br><b style="color:'.$color.'">' . $value . ' Euro</b>'; 
+
+	$title = $desc . ' ' .$value .' Euro';
+	$message = '<b>'. $date . '</b>'. "\n" . $subject . "\n" . "\n". '<b><font color="'.$color.'">' . $value . ' Euro</font></b>';
 	$utf8message = utf8_encode($message);
-	// play sound only on first push
-	$sound = $k == 0 ? 'cash' : 'no-sound';
-	
-	$cmd = 'curl --silent -d "user_credentials='.$boxcar_token.'&notification[title]='.urlencode($title).'&notification[long_message]='.urlencode($utf8message).'&notification[sound]='.$sound.'" https://new.boxcar.io/api/notifications';
-	//echo $cmd;
-	echo exec($cmd);
+
 	echo "\n";
+	$push = new Pushover();
+	$push->setToken($pushover_app_token);
+	$push->setUser($pushover_user);
+	$push->setHtml(1);
+	$push->setTitle($title);
+	$push->setMessage($utf8message);
+	//$push->setUrl('http://test.com');
+	//$push->setUrlTitle($title);
+	$push->setDevice($pushover_device_name);
+	$push->setPriority(1);
+	$push->setRetry(60); //Used with Priority = 2; Pushover will resend the notification every 60 seconds until the user accepts.
+	$push->setExpire(3600); //Used with Priority = 2; Pushover will resend the notification every 60 seconds for 3600 seconds. After that point, it stops sending notifications.
+	#$push->setCallback('http://yoururl.com');
+	$push->setTimestamp(time());
+	$push->setDebug(true);
+	$push->setSound('bike');
+	$go = $push->send();
+	echo '<pre>';
+	print_r($go);
+	echo '</pre>';
+
+
 }
 ?>
-
-
